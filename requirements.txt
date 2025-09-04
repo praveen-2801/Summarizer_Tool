@@ -1,0 +1,11 @@
+streamlit
+langchain
+openai==0.28
+faiss-cpu
+PyPDF2
+torch
+sentence_transformers
+langchain_community
+python-docx
+reportlab
+docx
