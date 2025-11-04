@@ -1,26 +1,18 @@
 import os
-from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
 import streamlit as st
 
-# ✅ Import from the new module (not langchain.chat_models)
-from langchain_openai import ChatOpenAI
-
-# Load local .env for local runs (Render ignores it safely)
-load_dotenv()
-
-# Safely get the API key
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError(
-        "❌ OPENAI_API_KEY not found. Please set it in Render → Environment → Add Environment Variable."
-    )
-
-# Ensure the key is available for LangChain
-os.environ["OPENAI_API_KEY"] = api_key
-
-
 def load_model():
-    """Load and cache the ChatOpenAI model."""
+    """Load ChatOpenAI model (reads key from Streamlit secrets)."""
+    # First try Streamlit secrets; fallback to environment
+    api_key = st.secrets.get("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY"))
+
+    if not api_key:
+        st.error("❌ OPENAI_API_KEY missing. Please add it in Streamlit → Settings → Secrets.")
+        return None
+
+    os.environ["OPENAI_API_KEY"] = api_key
+
     try:
         if 'llm' not in st.session_state:
             st.session_state.llm = ChatOpenAI(
@@ -30,5 +22,5 @@ def load_model():
             )
         return st.session_state.llm
     except Exception as e:
-        st.error(f"Error in load_model: {e}")
+        st.error(f"Error initializing ChatOpenAI: {e}")
         return None
