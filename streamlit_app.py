@@ -344,32 +344,32 @@ def main_app():
     except:
         st.error('Some error occurred.')
 
-# ####################################################################### Login Functionality ###########################################################################
-# def login_page():
-#     ############################################### Webpage Configuration ##############################################
-#     st.set_page_config(page_title="PDF File Summarizer", page_icon=":page_with_curl:", layout="centered")
+####################################################################### Login Functionality ###########################################################################
+def login_page():
+    ############################################### Webpage Configuration ##############################################
+    st.set_page_config(page_title="PDF File Summarizer", page_icon=":page_with_curl:", layout="centered")
 
-#     col1, col2, col3 = st.columns([1, 2, 1])
-#     with col2:
-#         st.image("tcp_logo.png", use_container_width=True)
-#     st.markdown("<h1 style='text-align: center;'>PDF File Summarizer</h1>", unsafe_allow_html=True)
-#     #######################################################################################################################
-#     st.write("Please enter the password to continue.")
-#     password = st.text_input("Password", type="password")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image("tcp_logo.png", use_container_width=True)
+    st.markdown("<h1 style='text-align: center;'>PDF File Summarizer</h1>", unsafe_allow_html=True)
+    #######################################################################################################################
+    st.write("Please enter the password to continue.")
+    password = st.text_input("Password", type="password")
 
-#     CORRECT_PASSWORD = os.getenv("CORRECT_PASSWORD")
+    CORRECT_PASSWORD = os.getenv("CORRECT_PASSWORD")
     
-#     if st.button("Submit"):
-#         if password == CORRECT_PASSWORD:
-#             st.session_state["authenticated"] = True
-#             st.rerun()
-#         else:
-#             st.error("Incorrect password. Please try again.")
+    if st.button("Submit"):
+        if password == CORRECT_PASSWORD:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password. Please try again.")
 
-# if "authenticated" not in st.session_state:
-#     st.session_state["authenticated"] = False
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
 
-# if st.session_state["authenticated"]:
+if st.session_state["authenticated"]:
 main_app()
-# else:
-#     login_page()
+else:
+    login_page()
