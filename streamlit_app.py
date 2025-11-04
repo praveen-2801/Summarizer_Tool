@@ -14,6 +14,7 @@ from utils.docx_file_ans import get_docx_file
 from utils.get_pdf_file import get_pdf_file
 from docx import Document
 import pandas as pd
+import streamlit.components.v1 as components
 
 load_model()
 load_embeddings()
@@ -162,12 +163,31 @@ def main_app():
                 # Display the selected file
                 if selected_file:
                     st.subheader(f"Viewing File: {selected_file_name}")
-
+                    
                     if selected_file_name.lower().endswith(".pdf"):
+                        # Read and encode PDF as base64
                         pdf_bytes = selected_file.read()
-                        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-                        pdf_display = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="1000" type="application/pdf"></iframe>'
-                        st.markdown(pdf_display, unsafe_allow_html=True)
+                        pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                    
+                        # Secure Blob-based PDF viewer (works across Chrome/Edge/Safari/Firefox)
+                        pdf_viewer_html = f"""
+                            <html>
+                            <body style="margin:0;">
+                            <iframe id="pdf-frame" width="100%" height="1000" style="border:none;"></iframe>
+                            <script>
+                                const pdfData = "{pdf_base64}";
+                                const byteArray = Uint8Array.from(atob(pdfData), c => c.charCodeAt(0));
+                                const blob = new Blob([byteArray], {{ type: "application/pdf" }});
+                                const url = URL.createObjectURL(blob);
+                                document.getElementById("pdf-frame").src = url;
+                            </script>
+                            </body>
+                            </html>
+                        """
+                    
+                        # Render HTML safely inside Streamlit
+                        components.html(pdf_viewer_html, height=1000, scrolling=True)
+
 
                     elif selected_file_name.lower().endswith(".docx"):
 
