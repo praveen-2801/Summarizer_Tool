@@ -1,6 +1,6 @@
 from langchain.schema import SystemMessage, HumanMessage
 #from utils.load_model import llm
-from utils.get_relevant_chunks import get_relevant_chunks
+from utils.get_relevent_chunks import get_relevant_chunks
 import streamlit as st
 
 def answer_question(questions, all_chunks, all_file_page_mappings):
