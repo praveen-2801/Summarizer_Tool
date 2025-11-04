@@ -43,7 +43,11 @@ def main_app():
                 if "file_upload_check" not in st.session_state:
                     st.session_state.file_upload_check = False
 
-                st.session_state.uploaded_files = st.file_uploader(" ", type=["pdf","docx","xlsx"], accept_multiple_files=True)
+                st.session_state.uploaded_files = st.file_uploader(
+                                                    "Upload Files",
+                                                    type=["pdf", "docx", "xlsx", "xls"],
+                                                    accept_multiple_files=True
+                                                )
             except:
                 st.error('Error in file upload.')
             ########################################################################################################
@@ -69,33 +73,23 @@ def main_app():
                 #with button_col1:
                 st.info("Please click on **Process Files** button to process if new file(s) are uploaded and then go on and generate the answers.")
                 if st.button('Process Files'):
-                    if st.session_state.uploaded_files:
+                    if st.session_state.uploaded_files :
                         for uploaded_file in st.session_state.uploaded_files:
                             with st.spinner(f"Processing {uploaded_file.name}..."):
-                                if uploaded_file.name.endswith(".pdf"):
-                                    chunks, file_page_mapping = embed_pdf(uploaded_file, uploaded_file.name)
-
-                                elif uploaded_file.name.endswith(".docx"):
-                                    doc = Document(uploaded_file)
-                                    text = "\n".join([p.text for p in doc.paragraphs])
-                                    # convert text into chunks like PDFs
-                                    chunks, file_page_mapping = embed_pdf(text, uploaded_file.name)
-
-                                elif uploaded_file.name.endswith(".xlsx"):
-                                    df = pd.read_excel(uploaded_file)
-                                    text = df.astype(str).apply(lambda x: ' '.join(x), axis=1).str.cat(sep="\n")
-                                    # convert text into chunks
-                                    chunks, file_page_mapping = embed_pdf(text, uploaded_file.name)
-
-                                # store results
-                                st.session_state.chunks = chunks
+                                #if 'embed_check' not in st.session_state:
+                                cchunks, file_page_mapping = embed_file(uploaded_file, uploaded_file.name)
+                                    #st.session_state.embed_check = True
+                                    #st.session_state.chunks = chunks
+                                    #st.session_state.file_page_mapping = file_page_mapping
+                                st.session_state.chunks = cchunks
                                 st.session_state.file_page_mapping = file_page_mapping
-                                st.session_state.all_chunks.extend(chunks)
-                                st.session_state.all_file_page_mappings.extend(file_page_mapping)
+                                st.session_state.all_chunks.extend(st.session_state.chunks)
+                                st.session_state.all_file_page_mappings.extend(st.session_state.file_page_mapping)
+                                #st.write(f'Processed file: {uploaded_file.name}')
 
-                        st.success("All files have been processed and indexed.")
+                        st.success("All PDFs have been processed and indexed.")
                         st.session_state.files_processed_check = True
-
+                        #st.write(st.session_state.all_file_page_mappings)
             except:
                 st.error('Error in creating embeddings.')
 
@@ -151,41 +145,51 @@ def main_app():
         ################################################################################## Wrapper for Right Section Start ####################################################################
         with main_col3:
             try:
+                selected_file = None  # initialize to avoid "not defined" error
+
                 if st.session_state.uploaded_files:
                     # Display the uploaded files in a selection box
                     file_names = [uploaded_file.name for uploaded_file in st.session_state.uploaded_files]
-                    file_names.insert(0, "Select a PDF File")
-                    selected_pdf = st.selectbox("Select a PDF to view", file_names)
+                    file_names.insert(0, "Select a File")
+                    selected_file_name = st.selectbox("Select a File to view", file_names)
 
-                    # Retrieve the selected file
-                    selected_file = None
-                    for uploaded_file in st.session_state.uploaded_files:
-                        if uploaded_file.name == selected_pdf:
-                            selected_file = uploaded_file
-                            break
+                    if selected_file_name != "Select a File":  # only process when user picks a real file
+                        for uploaded_file in st.session_state.uploaded_files:
+                            if uploaded_file.name == selected_file_name:
+                                selected_file = uploaded_file
+                                break
 
-                # Display the selected PDF using pdf.js
-                if selected_file and selected_file.name.endswith(".pdf"):
-                    st.subheader(f"Viewing PDF: {selected_pdf}")
+                # Display the selected file
+                if selected_file:
+                    st.subheader(f"Viewing File: {selected_file_name}")
 
-                    # Reset file pointer before reading (important!)
-                    selected_file.seek(0)
-                    pdf_bytes = selected_file.read()
+                    if selected_file_name.lower().endswith(".pdf"):
+                        pdf_bytes = selected_file.read()
+                        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+                        pdf_display = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="1000" type="application/pdf"></iframe>'
+                        st.markdown(pdf_display, unsafe_allow_html=True)
 
-                    # Encode the PDF file in base64
-                    pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                    elif selected_file_name.lower().endswith(".docx"):
 
-                    # Use Mozilla pdf.js viewer
-                    pdf_display = f"""
-                        <iframe 
-                            src="https://mozilla.github.io/pdf.js/web/viewer.html?file=data:application/pdf;base64,{pdf_base64}" 
-                            width="700" height="1000" style="border:none;">
-                        </iframe>
-                    """
-                    components.html(pdf_display, height=1000)
+                        doc = Document(selected_file)
+                        st.markdown("### Document Content")
+                        for para in doc.paragraphs:
+                            if para.text.strip():
+                                st.write(para.text)
+
+                    elif selected_file_name.lower().endswith((".xlsx", ".xls")):
+
+                        try:
+                            excel_data = pd.read_excel(selected_file, sheet_name=None)  # read all sheets
+                            for sheet, df in excel_data.items():
+                                st.markdown(f"### Sheet: {sheet}")
+                                st.dataframe(df)
+                        except Exception as e:
+                            st.error(f"Error reading Excel file: {e}")
 
             except Exception as e:
-                st.error(f"Error displaying PDF: {str(e)}")
+                st.error(f"Error displaying file: {e}")
+
 
         ######################################### Making only the second column scrollable ######################################
         css = '''
@@ -343,6 +347,7 @@ def main_app():
 
     except:
         st.error('Some error occurred.')
+
 
 ####################################################################### Login Functionality ###########################################################################
 def login_page():
