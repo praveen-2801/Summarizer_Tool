@@ -164,21 +164,39 @@ def main_app():
                 if selected_file:
                     st.subheader(f"Viewing File: {selected_file_name}")
                     
+                    
                     if selected_file_name.lower().endswith(".pdf"):
                         pdf_bytes = selected_file.read()
                         pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
                     
-                        pdf_html = f"""
-                            <embed
-                                src="data:application/pdf;base64,{pdf_base64}"
-                                type="application/pdf"
-                                width="100%"
-                                height="1000px"
-                                style="border:none;"
-                            />
-                        """
+                        html_code = f"""
+                            <div id="pdf-container" style="height:1000px; overflow:auto;"></div>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+                            <script>
+                            const pdfData = atob("{pdf_base64}");
+                            const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                     
-                        st.markdown(pdf_html, unsafe_allow_html=True)
+                            const loadingTask = pdfjsLib.getDocument({{data: pdfData}});
+                            loadingTask.promise.then(pdf => {{
+                                const container = document.getElementById('pdf-container');
+                                for (let i = 1; i <= pdf.numPages; i++) {{
+                                    pdf.getPage(i).then(page => {{
+                                        const viewport = page.getViewport({{scale:1.2}});
+                                        const canvas = document.createElement('canvas');
+                                        const context = canvas.getContext('2d');
+                                        canvas.height = viewport.height;
+                                        canvas.width = viewport.width;
+                                        container.appendChild(canvas);
+                                        page.render({{canvasContext: context, viewport: viewport}});
+                                    }});
+                                }}
+                            }});
+                            </script>
+                        """
+                        components.html(html_code, height=1000, scrolling=True)
+
 
 
                     elif selected_file_name.lower().endswith(".docx"):
