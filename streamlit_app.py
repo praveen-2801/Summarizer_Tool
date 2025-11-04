@@ -7,7 +7,7 @@ import sys
 from utils.questions import general_questions, shipping_logistics_questions, bid_rfi_rfp_questions, contract_questions
 from utils.load_model import load_model
 from utils.embedding import load_embeddings
-from utils.embed_pdf import embed_pdf
+from utils.embed_pdf import embed_file
 from utils.answer_question import answer_question, answer_question_contract, answer_question_shipping_logistics, answer_question_rfi_rfp
 from utils.text_file_ans import get_text_file
 from utils.docx_file_ans import get_docx_file
