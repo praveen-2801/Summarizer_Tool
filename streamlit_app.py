@@ -370,6 +370,6 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if st.session_state["authenticated"]:
-main_app()
+    main_app()
 else:
     login_page()
