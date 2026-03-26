@@ -7,15 +7,18 @@ def get_relevant_chunks(question, all_chunks, all_file_page_mappings, top_k=3):
         if not all_chunks or not all_file_page_mappings:
             return [], []
 
-        if "index" not in st.session_state or st.session_state.index.ntotal == 0:
+        if "embedding_model" not in st.session_state or "index" not in st.session_state:
+            st.error("Embedding model or FAISS index not initialized.")
+            return [], []
+
+        if st.session_state.index.ntotal == 0:
             return [], []
 
         question_embedding = st.session_state.embedding_model.encode(question)
-        k = min(top_k, len(all_chunks))
+        question_embedding = np.array([question_embedding], dtype="float32")
 
-        distances, indices = st.session_state.index.search(
-            np.array([question_embedding], dtype="float32"), k
-        )
+        k = min(top_k, len(all_chunks))
+        _, indices = st.session_state.index.search(question_embedding, k)
 
         valid_indices = [idx for idx in indices[0] if 0 <= idx < len(all_chunks)]
 
